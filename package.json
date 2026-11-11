@@ -1,0 +1,22 @@
+{
+  "name": "pitac-trucking-billing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monthly trucking services billing sheet for Pitac Multipurpose Cooperative",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "npm run build && electron ."
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.3.0",
+    "electron": "^45.2.3",
+    "vite": "^8.3.7"
+  }
+}
