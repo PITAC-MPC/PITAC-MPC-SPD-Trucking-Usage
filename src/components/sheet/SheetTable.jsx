@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react'
 import { formatMoney, isRowDayUsed, rowTrips } from '../../store'
 
+const NAME_LIST_ID = 'truck-name-roster'
+const PLATE_LIST_ID = 'truck-plate-roster'
+
 /**
  * The sheet's table: one row per truck, one column per day of the month.
- * The trucks come from the global list; every truck keeps its own used days
- * for this month, so two trucks can have been out on different dates.
+ * Every truck keeps its own used days for this month, so two trucks can
+ * have been out on different dates.
+ *
+ * The name and plate fields suggest every truck that was written down
+ * before, so a known truck can be picked instead of typed again.
  */
 export default function SheetTable({
   mode,
   rows,
+  roster,
   days,
   columnCount,
   onToggleDays,
@@ -31,8 +38,7 @@ export default function SheetTable({
 
   const totalTrips = rows.reduce((sum, item) => sum + rowTrips(item.row), 0)
   const totalAmount = rows.reduce(
-    (sum, item) =>
-      sum + (Number(item.row.rate) || 0) * rowTrips(item.row),
+    (sum, item) => sum + (Number(item.row.rate) || 0) * rowTrips(item.row),
     0,
   )
 
@@ -43,8 +49,36 @@ export default function SheetTable({
     setDraft({ name: '', plate: '', rate: '' })
   }
 
+  /** Picking a known truck fills its plate number too (and the other way). */
+  const plateOf = (name) =>
+    roster.find(
+      (truck) => truck.name.toLowerCase() === name.trim().toLowerCase(),
+    )?.plate ?? ''
+
+  const nameOf = (plate) =>
+    roster.find(
+      (truck) =>
+        plate.trim() &&
+        truck.plate.toLowerCase() === plate.trim().toLowerCase(),
+    )?.name ?? ''
+
   return (
     <>
+      {isScreen && (
+        <>
+          <datalist id={NAME_LIST_ID}>
+            {roster.map((truck) => (
+              <option key={truck.id} value={truck.name} label={truck.plate} />
+            ))}
+          </datalist>
+          <datalist id={PLATE_LIST_ID}>
+            {roster.map((truck) => (
+              <option key={truck.id} value={truck.plate} label={truck.name} />
+            ))}
+          </datalist>
+        </>
+      )}
+
       <tr className="doc-head-row">
         <th className="doc-th-trucks">TRUCKS</th>
         <th>PLATE #</th>
@@ -66,7 +100,8 @@ export default function SheetTable({
       {rows.length === 0 && (
         <tr>
           <td colSpan={columnCount} className="doc-empty-cell">
-            No trucks on this sheet yet — add one in the row below.
+            No trucks on this sheet yet — pick them from the list in the row
+            below.
           </td>
         </tr>
       )}
@@ -81,11 +116,17 @@ export default function SheetTable({
               {isScreen ? (
                 <input
                   className="doc-input doc-name-input"
+                  list={NAME_LIST_ID}
                   value={truck.name}
                   aria-label={`Truck ${index + 1} name`}
-                  onChange={(event) =>
-                    onPatchTruck(truck.id, { name: event.target.value })
-                  }
+                  onChange={(event) => {
+                    const name = event.target.value
+                    const plate = plateOf(name)
+                    onPatchTruck(truck.id, {
+                      name,
+                      ...(plate ? { plate } : {}),
+                    })
+                  }}
                 />
               ) : (
                 <span className="doc-name">{truck.name}</span>
@@ -96,12 +137,18 @@ export default function SheetTable({
               {isScreen ? (
                 <input
                   className="doc-input doc-plate-input"
+                  list={PLATE_LIST_ID}
                   value={truck.plate}
                   placeholder="—"
                   aria-label={`Truck ${index + 1} plate number`}
-                  onChange={(event) =>
-                    onPatchTruck(truck.id, { plate: event.target.value })
-                  }
+                  onChange={(event) => {
+                    const plate = event.target.value
+                    const name = nameOf(plate)
+                    onPatchTruck(truck.id, {
+                      plate,
+                      ...(name ? { name } : {}),
+                    })
+                  }}
                 />
               ) : (
                 <span className="doc-plate">{truck.plate}</span>
@@ -195,8 +242,8 @@ export default function SheetTable({
                 <button
                   type="button"
                   className="doc-remove"
-                  title={`Remove ${truck.name || 'this truck'}`}
-                  aria-label={`Remove ${truck.name || 'this truck'}`}
+                  title={`Take ${truck.name || 'this truck'} off the sheet`}
+                  aria-label={`Take ${truck.name || 'this truck'} off the sheet`}
                   onClick={() => onDeleteTruck(truck.id)}
                 >
                   &times;
@@ -218,12 +265,19 @@ export default function SheetTable({
             <span className="doc-index doc-index-add">+</span>
             <input
               className="doc-input doc-name-input"
+              list={NAME_LIST_ID}
               value={draft.name}
               placeholder="Add truck"
               aria-label="New truck name"
-              onChange={(event) =>
-                setDraft((value) => ({ ...value, name: event.target.value }))
-              }
+              onChange={(event) => {
+                const name = event.target.value
+                const plate = plateOf(name)
+                setDraft((value) => ({
+                  ...value,
+                  name,
+                  ...(plate ? { plate } : {}),
+                }))
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault()
@@ -236,12 +290,19 @@ export default function SheetTable({
           <td className="doc-td-plate">
             <input
               className="doc-input doc-plate-input"
+              list={PLATE_LIST_ID}
               value={draft.plate}
               placeholder="Plate #"
               aria-label="New truck plate number"
-              onChange={(event) =>
-                setDraft((value) => ({ ...value, plate: event.target.value }))
-              }
+              onChange={(event) => {
+                const plate = event.target.value
+                const name = nameOf(plate)
+                setDraft((value) => ({
+                  ...value,
+                  plate,
+                  ...(name ? { name } : {}),
+                }))
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault()

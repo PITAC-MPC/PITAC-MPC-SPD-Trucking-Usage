@@ -5,6 +5,7 @@ export default function PaperPreview({
   month,
   sheet,
   rows,
+  roster,
   days,
   scale,
   viewportRef,
@@ -17,6 +18,7 @@ export default function PaperPreview({
           month={month}
           sheet={sheet}
           rows={rows}
+          roster={roster}
           days={days}
         />
       </div>

@@ -20,6 +20,7 @@ export default function App() {
     days,
     sheet,
     rows,
+    roster,
     totals,
     isCurrentMonth,
     showPreview,
@@ -38,6 +39,7 @@ export default function App() {
         <AppBar
           showPreview={showPreview}
           onTogglePreview={() => billing.setShowPreview((value) => !value)}
+          onCreateNew={billing.handleCreateNew}
           onSavePdf={billing.handleSavePdf}
           onPrint={billing.handlePrint}
         />
@@ -68,6 +70,7 @@ export default function App() {
                     month={month}
                     sheet={sheet}
                     rows={rows}
+                    roster={roster}
                     days={days}
                     onToggleDays={billing.handleToggleDays}
                     onPatchRow={billing.patchRow}
@@ -93,6 +96,7 @@ export default function App() {
                   month={month}
                   sheet={sheet}
                   rows={rows}
+                  roster={roster}
                   days={days}
                   scale={previewScale}
                   viewportRef={previewRef}
@@ -117,6 +121,7 @@ export default function App() {
           month={month}
           sheet={sheet}
           rows={rows}
+          roster={roster}
           days={days}
         />
       </div>

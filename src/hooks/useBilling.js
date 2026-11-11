@@ -4,21 +4,24 @@ import {
   emptyMonth,
   loadData,
   monthDays,
+  monthTrucks,
   patchMonthRow,
   periodBounds,
   rowTrips,
   saveData,
   setRowDays,
-  truckRows,
   uid,
 } from '../store'
 
 /**
- * All the billing state in one place: the saved data, the truck list, the
- * month being edited, the billing period and every action the UI can trigger.
+ * All the billing state in one place: the truck roster, the sheet being
+ * filled in, the billing period and every action the UI can trigger.
  *
  * The month is not chosen separately — it follows the start date of the
  * period, so picking a date in another month switches sheets.
+ *
+ * Only the roster is kept between sessions; the sheet itself is a working
+ * copy that is cleared with "Create new".
  */
 export default function useBilling() {
   const [data, setData] = useState(loadData)
@@ -28,10 +31,8 @@ export default function useBilling() {
   const month = data.lastMonth
   const days = useMemo(() => monthDays(month), [month])
   const sheet = data.months[month] ?? emptyMonth()
-  const rows = useMemo(
-    () => truckRows(sheet, data.trucks),
-    [sheet, data.trucks],
-  )
+  const roster = data.trucks
+  const rows = useMemo(() => monthTrucks(sheet, roster), [sheet, roster])
 
   const { start: periodStart, end: periodEnd } = periodBounds(month, sheet)
 
@@ -146,28 +147,59 @@ export default function useBilling() {
       patchMonthRow(existing, truckId, (row) => setRowDays(row, dates, mode)),
     )
 
-  /** Adds a truck to the list — it shows up in every month. */
+  /**
+   * Adds a truck to the sheet. Known trucks (by name or plate) are reused
+   * from the roster, new ones are added to it.
+   */
   const addTruck = ({ name: rawName, plate: rawPlate, rate: rawRate }) => {
     const name = String(rawName ?? '').trim()
     if (!name) return
     const plate = String(rawPlate ?? '').trim()
     const rate = Math.max(0, Number(rawRate) || 0)
 
-    const truck = { id: uid(), name, plate, rate }
-    setData((previous) => ({
-      ...previous,
-      trucks: [...previous.trucks, truck],
-    }))
-    notify(`${name} added — it is now on every month's sheet.`)
+    const known =
+      roster.find(
+        (truck) =>
+          truck.name.toLowerCase() === name.toLowerCase() ||
+          (plate && truck.plate.toLowerCase() === plate.toLowerCase()),
+      ) ?? null
+    const truck = known ?? { id: uid(), name, plate }
+
+    setData((previous) => {
+      const key = previous.lastMonth
+      const existing = previous.months[key] ?? emptyMonth()
+      const already = (existing.rows ?? []).some(
+        (row) => row.truckId === truck.id,
+      )
+      return {
+        ...previous,
+        trucks: known
+          ? previous.trucks
+          : [...previous.trucks, { ...truck, plate: plate || truck.plate }],
+        months: {
+          ...previous.months,
+          [key]: already
+            ? existing
+            : {
+                ...existing,
+                rows: [
+                  ...(existing.rows ?? []),
+                  { truckId: truck.id, rate, tripsOverride: null, days: [] },
+                ],
+              },
+        },
+      }
+    })
+    notify(`${truck.name} added to this sheet.`)
   }
 
-  /** Removes a truck from the list and from every month. */
+  /** Removes a truck from the sheet and from the roster. */
   const handleDeleteTruck = (truckId) => {
-    const truck = data.trucks.find((item) => item.id === truckId)
+    const truck = roster.find((item) => item.id === truckId)
     const label = truck?.name || 'this truck'
     if (
       !window.confirm(
-        `Remove ${label} from the truck list?\n\nIt disappears from every month.`,
+        `Remove ${label} from this sheet?\n\nIt is also taken off the list of known trucks.`,
       )
     ) {
       return
@@ -185,6 +217,19 @@ export default function useBilling() {
         ]),
       ),
     }))
+  }
+
+  /** Clears everything written on the sheet; the roster is kept. */
+  const handleCreateNew = () => {
+    if (
+      !window.confirm(
+        'Create a new sheet?\n\nEverything written on this sheet is cleared — the trucks stay in the list.',
+      )
+    ) {
+      return
+    }
+    updateSheet(() => emptyMonth())
+    notify('New sheet ready.')
   }
 
   const handlePrint = async () => {
@@ -228,6 +273,7 @@ export default function useBilling() {
     days,
     sheet,
     rows,
+    roster,
     totals,
     periodStart,
     periodEnd,
@@ -244,6 +290,7 @@ export default function useBilling() {
     handleToggleDays,
     addTruck,
     handleDeleteTruck,
+    handleCreateNew,
     handlePrint,
     handleSavePdf,
     patchSheet,

@@ -82,17 +82,15 @@ export function emptyMonth() {
   }
 }
 
-/** The trucks of a month: every global truck plus that month's data. */
-export function truckRows(sheet, trucks) {
-  const byTruck = new Map((sheet.rows ?? []).map((row) => [row.truckId, row]))
-  return trucks.map((truck) => ({
-    truck,
-    row: byTruck.get(truck.id) ?? {
-      truckId: truck.id,
-      rate: truck.rate ?? 0,
-      tripsOverride: null,
-      days: [],
-    },
+/**
+ * The trucks on this month: the ones that were picked for it, with that
+ * month's data (rate, trips, days).
+ */
+export function monthTrucks(sheet, trucks) {
+  const byId = new Map(trucks.map((truck) => [truck.id, truck]))
+  return (sheet.rows ?? []).map((row) => ({
+    truck: byId.get(row.truckId) ?? { id: row.truckId, name: '', plate: '' },
+    row,
   }))
 }
 
@@ -177,73 +175,22 @@ export function formatPeriod(monthKey, sheet) {
   return `${monthName} ${ds} ${ys} - ${monthName} ${de} ${ye}`
 }
 
-/** Expand ranges into the individual days they cover. */
-export function expandRanges(ranges) {
-  const days = []
-  for (const entry of ranges ?? []) {
-    const span = countDays(entry.start, entry.end)
-    for (let i = 0; i < span; i += 1) {
-      days.push(addDays(entry.start, i))
-    }
-  }
-  return days
-}
-
 /* ------------------------------------------------------------------
    Saving and loading
+   Only the truck roster (name + plate) is kept between sessions. The
+   sheet itself — the dates, trips, rates and everything written on it —
+   is a working copy that starts fresh every time.
    ------------------------------------------------------------------ */
 
-/**
- * Older files kept a copy of the truck list inside every month. They are
- * folded into one global list; each month keeps only its own data.
- */
-function migrate(data) {
-  const trucks = new Map()
-  for (const truck of data.trucks ?? []) {
-    trucks.set(truck.id, {
-      id: truck.id,
-      name: truck.name ?? '',
+/** Older files kept a copy of the truck list inside every month. */
+function migrateTrucks(trucks) {
+  return (trucks ?? [])
+    .filter((truck) => truck && truck.name)
+    .map((truck) => ({
+      id: truck.id || uid(),
+      name: truck.name,
       plate: truck.plate ?? '',
-      rate: truck.rate ?? 0,
-    })
-  }
-
-  const months = {}
-  for (const [key, month] of Object.entries(data.months ?? {})) {
-    const rows = (month.rows ?? []).map((row) => {
-      let truckId = row.truckId
-      if (!truckId || !trucks.has(truckId)) {
-        truckId = truckId || uid()
-        if (!trucks.has(truckId)) {
-          trucks.set(truckId, {
-            id: truckId,
-            name: row.name ?? '',
-            plate: row.plate ?? '',
-            rate: row.rate ?? 0,
-          })
-        }
-      }
-      const truck = trucks.get(truckId)
-      return {
-        truckId,
-        rate: row.rate ?? truck.rate ?? 0,
-        tripsOverride: row.tripsOverride ?? null,
-        days: row.days ?? expandRanges(row.entries),
-      }
-    })
-
-    months[key] = {
-      ...emptyMonth(),
-      ...month,
-      rows,
-    }
-  }
-
-  return {
-    trucks: [...trucks.values()],
-    months,
-    lastMonth: data.lastMonth || currentMonth(),
-  }
+    }))
 }
 
 export function loadData() {
@@ -251,8 +198,12 @@ export function loadData() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const data = JSON.parse(raw)
-      if (data && Array.isArray(data.trucks) && data.months) {
-        return migrate(data)
+      if (data && Array.isArray(data.trucks)) {
+        return {
+          trucks: migrateTrucks(data.trucks),
+          months: {},
+          lastMonth: currentMonth(),
+        }
       }
     }
   } catch (error) {
@@ -263,7 +214,16 @@ export function loadData() {
 
 export function saveData(data) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        trucks: data.trucks.map(({ id, name, plate }) => ({
+          id,
+          name,
+          plate,
+        })),
+      }),
+    )
   } catch (error) {
     console.error('Could not save data', error)
   }

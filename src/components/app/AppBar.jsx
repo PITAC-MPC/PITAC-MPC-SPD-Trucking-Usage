@@ -21,6 +21,7 @@ function TruckIcon() {
 export default function AppBar({
   showPreview,
   onTogglePreview,
+  onCreateNew,
   onSavePdf,
   onPrint,
 }) {
@@ -38,6 +39,13 @@ export default function AppBar({
         </div>
 
         <div className="app-actions">
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            onClick={onCreateNew}
+          >
+            Create new
+          </button>
           <button
             type="button"
             className="btn btn-outline-secondary btn-sm"

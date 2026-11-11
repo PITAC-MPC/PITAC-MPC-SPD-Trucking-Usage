@@ -11,7 +11,7 @@ the visual system of the
 
 ## Download
 
-[![Download PITAC Trucking Billing v0.1.2](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.2-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+[![Download PITAC Trucking Billing v0.1.3](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.3-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
 
 1. Click the button above and download the **Setup** file.
 2. Open it and follow the installer (Next → Next → Install).
@@ -40,29 +40,31 @@ Everything is on one screen.
    - the **Date:** line holds the billing period — the start and end dates are
      ordinary calendar fields, and the start date also decides which month the
      sheet shows (pick a date in another month to open that month);
-   - the **truck list is shared**: a truck you add shows up on every month's
-     sheet, and removing it removes it everywhere. Names and plate numbers are
-     the same in every month; the rate, the trips and the used days belong to
-     the month you are filling in;
+   - the **trucks** are picked in the last row of the table: the name and
+     plate fields drop down **every truck that was written down before**, so a
+     known truck is picked instead of typed again (the plate number fills
+     itself in);
    - every truck keeps **its own used days**: click a day cell to mark it, or
      click and drag across the days to mark a whole run — only that truck row
      changes, so two trucks can have been out on different dates;
    - edit the **truck name**, **plate #**, **trips** and **rate** right on the
-     sheet; a truck is added by typing its name and plate in the last row;
+     sheet; the `×` takes a truck off the sheet;
    - edit the **control number** (top right), the **destination** on the
      `Date:` line and the **signatories** at the bottom;
    - trips count themselves from that truck's marked days — type a number to
      override (for trips done ahead of schedule) and press **auto** to go back;
    - the **notes** area between the table and the signatures is printed as
      blank space for handwriting (typed notes are printed too).
-2. **Paper preview** (top bar) expands the printed A4 landscape sheet inline on
+2. **Create new** (top bar) clears everything written on the sheet and gives a
+   blank one — the trucks you have written down stay in the drop-downs.
+3. **Paper preview** (top bar) expands the printed A4 landscape sheet inline on
    the same page — exactly what the printer will produce.
-3. **Print** sends the sheet to the printer; **Save as PDF** writes a PDF file
+4. **Print** sends the sheet to the printer; **Save as PDF** writes a PDF file
    instead. Paper size is fixed to A4 landscape and the output stays on one page.
 
-Everything is saved automatically on this computer. Each month keeps its own
-period, destination, notes, signatories and its own data for every truck (the
-rate, the trips and the days that truck was used).
+Only the **truck names and plate numbers** are kept between sessions. The
+dates, the rates, the trips and everything else written on the sheet belong to
+that sheet only — start a new one with **Create new**.
 
 ## Notes / current limits
 
@@ -106,18 +108,18 @@ src/components/
 npm run dist       # builds the app and the Windows installer in release/
 ```
 
-The installer is written to `release/PITAC Trucking Billing Setup 0.1.2.exe`.
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.3.exe`.
 
 ## Data model
 
-- `trucks` — **one global list**: `{ id, name, plate, rate }`. Every truck shows
-  up on every month's sheet; adding or removing one applies to all months.
-- `months[<month>]` — what is specific to that month:
-  - `periodStart` / `periodEnd` — the billing period printed on the `Date:` line;
-  - `notes`, `destination`, `controlNumber` and the two signatories;
-  - `rows` — one entry per truck: `{ truckId, rate, tripsOverride, days }`,
-    where `days` are the days that truck was used.
+Only one thing is written to disk:
+
+- `trucks` — the roster of every truck that was written down: `{ id, name, plate }`.
+
+Everything else on the sheet — the billing period, the destination, the notes,
+the signatories and each truck's rate, trips and used days — is a working copy
+for the sheet you are filling in. It is not saved; **Create new** clears it and
+starts a fresh sheet with the roster still available in the drop-downs.
 
 Older files that kept a copy of the truck list inside every month are migrated
-on load: the copies are folded into the one global list and each month keeps
-only its own data.
+on load: the copies are folded into the one roster and the sheet starts empty.

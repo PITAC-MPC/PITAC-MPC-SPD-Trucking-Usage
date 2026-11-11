@@ -60,6 +60,7 @@ export default function Sheet({
   month,
   sheet,
   rows,
+  roster,
   days,
   onToggleDays,
   onPatchRow,
@@ -138,6 +139,7 @@ export default function Sheet({
           <SheetTable
             mode={mode}
             rows={rows}
+            roster={roster}
             days={days}
             columnCount={columnCount}
             onToggleDays={onToggleDays}
