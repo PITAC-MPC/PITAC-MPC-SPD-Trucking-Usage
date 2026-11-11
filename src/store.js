@@ -26,28 +26,12 @@ export function monthDays(monthKey) {
   )
 }
 
-export function shiftMonth(monthKey, delta) {
-  const [year, month] = monthKey.split('-').map(Number)
-  const date = new Date(year, month - 1 + delta, 1)
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`
-}
-
 export function formatMonth(monthKey) {
   const [year, month] = monthKey.split('-').map(Number)
   return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   })
-}
-
-/** "4 March 2026" — how dates are shown in the app. */
-export function formatLongDate(isoDate) {
-  if (!isoDate) return ''
-  const [year, month, day] = isoDate.split('-').map(Number)
-  const name = new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    month: 'long',
-  })
-  return `${day} ${name} ${year}`
 }
 
 export function shortDate(isoDate) {
@@ -191,16 +175,6 @@ export function formatPeriod(monthKey, sheet) {
     return `${monthName} ${ds}-${de} ${ye}`
   }
   return `${monthName} ${ds} ${ys} - ${monthName} ${de} ${ye}`
-}
-
-/** Months offered by the date picker, around the month being edited. */
-export function monthWindow(centerMonthKey, before = 12, after = 12) {
-  const months = []
-  for (let delta = -before; delta <= after; delta += 1) {
-    const key = shiftMonth(centerMonthKey, delta)
-    months.push({ key, label: formatMonth(key), days: monthDays(key) })
-  }
-  return months
 }
 
 /** Expand ranges into the individual days they cover. */

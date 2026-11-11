@@ -21,8 +21,6 @@ export default function App() {
     sheet,
     rows,
     totals,
-    startMonths,
-    endMonths,
     isCurrentMonth,
     showPreview,
     toast,
@@ -71,8 +69,6 @@ export default function App() {
                     sheet={sheet}
                     rows={rows}
                     days={days}
-                    startMonths={startMonths}
-                    endMonths={endMonths}
                     onToggleDays={billing.handleToggleDays}
                     onPatchRow={billing.patchRow}
                     onPatchTruck={billing.patchTruck}

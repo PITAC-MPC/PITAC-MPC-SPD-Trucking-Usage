@@ -11,7 +11,7 @@ the visual system of the
 
 ## Download
 
-[![Download PITAC Trucking Billing v0.1.1](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.1-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+[![Download PITAC Trucking Billing v0.1.2](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.2-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
 
 1. Click the button above and download the **Setup** file.
 2. Open it and follow the installer (Next → Next → Install).
@@ -37,10 +37,9 @@ npm start
 Everything is on one screen.
 
 1. **The sheet** is the working surface:
-   - the **Date:** line holds the billing period — both dates are picked from
-     lists that read like *4 March 2026*, and the start date also decides
-     which month the sheet shows (picking a date in another month opens that
-     month);
+   - the **Date:** line holds the billing period — the start and end dates are
+     ordinary calendar fields, and the start date also decides which month the
+     sheet shows (pick a date in another month to open that month);
    - the **truck list is shared**: a truck you add shows up on every month's
      sheet, and removing it removes it everywhere. Names and plate numbers are
      the same in every month; the rate, the trips and the used days belong to
@@ -91,7 +90,6 @@ src/components/
   app/AppBar.jsx               brand and print actions
   app/Toast.jsx                status messages
   ui/SectionHeading.jsx        eyebrow + title + action
-  ui/DateSelect.jsx            date picker that reads "4 March 2026"
   preview/PaperPreview.jsx     inline A4 landscape preview
   sheet/Sheet.jsx              the sheet (screen mode + print mode)
   sheet/SheetHead.jsx          control number, header rows, Date/Destination line
@@ -108,7 +106,7 @@ src/components/
 npm run dist       # builds the app and the Windows installer in release/
 ```
 
-The installer is written to `release/PITAC Trucking Billing Setup 0.1.1.exe`.
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.2.exe`.
 
 ## Data model
 

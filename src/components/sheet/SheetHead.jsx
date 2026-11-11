@@ -1,4 +1,3 @@
-import DateSelect from '../ui/DateSelect'
 import { formatPeriod, periodBounds } from '../../store'
 
 const ORG_NAME = 'Pitac Multipurpose Cooperative'
@@ -37,8 +36,6 @@ export function SheetHeadRows({
   sheet,
   days,
   columnCount,
-  startMonths,
-  endMonths,
   onPatchSheet,
   onPeriodStart,
   onPeriodEnd,
@@ -70,18 +67,22 @@ export function SheetHeadRows({
               <span className="doc-date-value">{formatPeriod(month, sheet)}</span>
             ) : (
               <span className="doc-date-inputs">
-                <DateSelect
+                <input
+                  type="date"
+                  className="doc-input doc-date-input"
                   value={start}
-                  months={startMonths}
-                  onChange={onPeriodStart}
-                  ariaLabel="Billing period start"
+                  aria-label="Billing period start"
+                  onChange={(event) => onPeriodStart(event.target.value)}
                 />
                 <span className="doc-date-dash">–</span>
-                <DateSelect
+                <input
+                  type="date"
+                  className="doc-input doc-date-input"
                   value={end}
-                  months={endMonths}
-                  onChange={onPeriodEnd}
-                  ariaLabel="Billing period end"
+                  min={start}
+                  max={days[days.length - 1]}
+                  aria-label="Billing period end"
+                  onChange={(event) => onPeriodEnd(event.target.value)}
                 />
               </span>
             )}

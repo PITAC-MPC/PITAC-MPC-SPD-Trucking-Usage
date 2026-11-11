@@ -4,7 +4,6 @@ import {
   emptyMonth,
   loadData,
   monthDays,
-  monthWindow,
   patchMonthRow,
   periodBounds,
   rowTrips,
@@ -44,12 +43,6 @@ export default function useBilling() {
     )
     return { trips, amount }
   }, [rows])
-
-  const startMonths = useMemo(() => monthWindow(month), [month])
-  const endMonths = useMemo(
-    () => [{ key: month, label: '', days }],
-    [month, days],
-  )
 
   useEffect(() => {
     saveData(data)
@@ -238,8 +231,6 @@ export default function useBilling() {
     totals,
     periodStart,
     periodEnd,
-    startMonths,
-    endMonths,
     isCurrentMonth: month === currentMonth(),
     // preview + toast
     showPreview,

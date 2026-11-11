@@ -419,30 +419,14 @@ select {
   gap: 4px;
 }
 
-.doc-select {
+.doc-date-input {
+  width: 132px;
   padding: 2px 4px;
-  color: var(--payslip-ink);
-  background: #fbfcfe;
-  border: 1px solid transparent;
-  border-radius: 0.3rem;
   font-size: 0.74rem;
-  font-weight: 600;
-}
-
-.doc-select:hover {
-  background: #f4f7fb;
-  border-color: var(--payslip-line);
-}
-
-.doc-select:focus {
-  background: #fff;
-  border-color: #d07772;
-  box-shadow: 0 0 0 0.12rem rgba(var(--payslip-accent-rgb), 0.12);
-  outline: none;
 }
 
 
-.doc-date-inputs .doc-select {
+.doc-date-inputs .doc-date-input {
   min-width: 132px;
 }
 

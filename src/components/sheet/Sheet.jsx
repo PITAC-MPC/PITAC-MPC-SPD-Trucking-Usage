@@ -61,8 +61,6 @@ export default function Sheet({
   sheet,
   rows,
   days,
-  startMonths,
-  endMonths,
   onToggleDays,
   onPatchRow,
   onPatchTruck,
@@ -133,8 +131,6 @@ export default function Sheet({
             sheet={sheet}
             days={days}
             columnCount={columnCount}
-            startMonths={startMonths}
-            endMonths={endMonths}
             onPatchSheet={onPatchSheet}
             onPeriodStart={onPeriodStart}
             onPeriodEnd={onPeriodEnd}
