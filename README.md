@@ -9,6 +9,16 @@ editable. The chrome around it (bar, buttons, inputs, panels, toasts) follows
 the visual system of the
 [SPD Logistics Payslip Generator](https://github.com/PITAC-MPC/SPD-Logistics-Payslip-Generator).
 
+## Download
+
+[![Download PITAC Trucking Billing v0.1.0](https://img.shields.io/badge/Download-v0.1.0-8d100e?style=for-the-badge)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+
+1. Click the button above and download the **Setup** file.
+2. Open it and follow the installer (Next → Next → Install).
+3. Launch **PITAC Trucking Billing** from the desktop or the Start menu.
+
+The app works offline; everything is saved on the computer it is installed on.
+
 ## Run it
 
 ```bash
@@ -28,17 +38,17 @@ Everything is on one screen.
 
 1. **The sheet** is the working surface:
    - the **Date:** line holds the billing period — its start and end dates are
-     the days the trucks were used, and the start date also decides which
-     month the sheet shows (typing a start date in another month opens that
-     month);
-   - every day inside the period is marked on every truck row — click a day to
-     switch it off or on again;
+     printed on the paper, and the start date also decides which month the
+     sheet shows (typing a start date in another month opens that month);
+   - every truck keeps **its own used days**: click a day cell to mark it, or
+     click and drag across the days to mark a whole run — only that truck row
+     changes, so two trucks can have been out on different dates;
    - edit the **truck name**, **plate #**, **trips** and **rate** right on the
      sheet; a truck is added by typing its name and plate in the last row;
    - edit the **control number** (top right), the **destination** on the
      `Date:` line and the **signatories** at the bottom;
-   - trips count themselves from the marked days — type a number to override
-     (for trips done ahead of schedule) and press **auto** to go back;
+   - trips count themselves from that truck's marked days — type a number to
+     override (for trips done ahead of schedule) and press **auto** to go back;
    - the **notes** area between the table and the signatures is printed as
      blank space for handwriting (typed notes are printed too).
 2. **Paper preview** (top bar) expands the printed A4 landscape sheet inline on
@@ -86,15 +96,23 @@ src/components/
   sheet/DocField.jsx           a field: input on screen, text when printing
 ```
 
+## Build the installer
+
+```bash
+npm run dist       # builds the app and the Windows installer in release/
+```
+
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.0.exe`.
+
 ## Data model
 
-Each month is stored separately and holds its own copy of the truck rows
-(name, plate, rate, optional manual trips) plus:
+Each month is stored separately and holds its own copy of the truck rows:
 
-- `periodStart` / `periodEnd` — the billing period; the days inside it are the
-  ones marked on every truck row;
-- `exceptions` — days inside the period that were switched off;
-- `notes`, `destination`, `controlNumber` and the two signatories.
+- `name`, `plate`, `rate` and an optional manual `tripsOverride`;
+- `days` — the days that truck was used (each truck has its own);
+- the month also keeps `periodStart` / `periodEnd` (the billing period printed
+  on the `Date:` line), `notes`, `destination`, `controlNumber` and the two
+  signatories.
 
-Older files that stored the marked days on each truck row are migrated on load:
-they become the period, with the days that were not used kept as exceptions.
+Older files that stored the used days differently (as ranges on the row, or
+shared by the whole month) are migrated on load into the per-truck day lists.

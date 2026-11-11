@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "description": "Monthly trucking services billing sheet for Pitac Multipurpose Cooperative",
+  "author": {
+    "name": "Pitac Multipurpose Cooperative",
+    "email": "logistics@pitacmpc.coop"
+  },
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "vite build",
-    "start": "npm run build && electron ."
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win nsis",
+    "dist:dir": "npm run build && electron-builder --win --dir"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
@@ -17,6 +23,40 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.3.0",
     "electron": "^45.2.3",
+    "electron-builder": "^26.0.12",
     "vite": "^8.3.7"
+  },
+  "build": {
+    "appId": "com.pitacmpc.truckingbilling",
+    "productName": "PITAC Trucking Billing",
+    "copyright": "Copyright © PITAC Multipurpose Cooperative",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "PITAC Trucking Billing Setup ${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PITAC Trucking Billing",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "PITAC Trucking Billing Setup ${version}.${ext}"
+    }
   }
 }

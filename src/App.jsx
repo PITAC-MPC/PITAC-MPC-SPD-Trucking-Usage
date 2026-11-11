@@ -20,7 +20,6 @@ export default function App() {
     days,
     sheet,
     totals,
-    usedDays,
     isCurrentMonth,
     showPreview,
     toast,
@@ -109,13 +108,7 @@ export default function App() {
       </div>
 
       <div className="print-root" aria-hidden="true">
-        <Sheet
-          mode="print"
-          month={month}
-          sheet={sheet}
-          days={days}
-          usedDays={usedDays}
-        />
+        <Sheet mode="print" month={month} sheet={sheet} days={days} />
       </div>
     </>
   )

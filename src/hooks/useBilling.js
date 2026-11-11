@@ -40,10 +40,7 @@ export default function useBilling() {
 
   const usedDays = useMemo(
     () =>
-      sheet.rows.reduce(
-        (sum, row) => sum + new Set(row.days ?? []).size,
-        0,
-      ),
+      sheet.rows.reduce((sum, row) => sum + new Set(row.days ?? []).size, 0),
     [sheet.rows],
   )
 

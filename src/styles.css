@@ -419,24 +419,6 @@ select {
   gap: 4px;
 }
 
-.doc-used {
-  margin-left: 4px;
-  padding: 0.1rem 0.45rem;
-  color: var(--payslip-accent-strong);
-  background: var(--payslip-accent-soft);
-  border: 1px solid var(--payslip-accent-border);
-  border-radius: 999px;
-  font-size: 0.66rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.doc-used-empty {
-  color: var(--payslip-muted);
-  background: transparent;
-  border-color: var(--payslip-line);
-  font-weight: 600;
-}
 
 .doc-date-input {
   width: 118px;
@@ -514,7 +496,7 @@ select {
 
 .doc-td-day {
   position: relative;
-  cursor: pointer;
+  cursor: crosshair;
   text-align: center;
 }
 

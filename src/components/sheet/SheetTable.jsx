@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatMoney, isRowDayUsed, rowDays, rowTrips } from '../../store'
+import { formatMoney, isRowDayUsed, rowTrips } from '../../store'
 import DocField from './DocField'
 
 /**
