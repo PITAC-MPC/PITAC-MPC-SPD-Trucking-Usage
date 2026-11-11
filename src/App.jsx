@@ -19,7 +19,10 @@ export default function App() {
     month,
     days,
     sheet,
+    rows,
     totals,
+    startMonths,
+    endMonths,
     isCurrentMonth,
     showPreview,
     toast,
@@ -66,11 +69,15 @@ export default function App() {
                     mode="screen"
                     month={month}
                     sheet={sheet}
+                    rows={rows}
                     days={days}
+                    startMonths={startMonths}
+                    endMonths={endMonths}
                     onToggleDays={billing.handleToggleDays}
                     onPatchRow={billing.patchRow}
+                    onPatchTruck={billing.patchTruck}
                     onPatchSheet={billing.patchSheet}
-                    onDeleteRow={billing.handleDeleteRow}
+                    onDeleteTruck={billing.handleDeleteTruck}
                     onAddTruck={billing.addTruck}
                     onPeriodStart={billing.handlePeriodStart}
                     onPeriodEnd={billing.handlePeriodEnd}
@@ -89,6 +96,7 @@ export default function App() {
                 <PaperPreview
                   month={month}
                   sheet={sheet}
+                  rows={rows}
                   days={days}
                   scale={previewScale}
                   viewportRef={previewRef}
@@ -108,7 +116,13 @@ export default function App() {
       </div>
 
       <div className="print-root" aria-hidden="true">
-        <Sheet mode="print" month={month} sheet={sheet} days={days} />
+        <Sheet
+          mode="print"
+          month={month}
+          sheet={sheet}
+          rows={rows}
+          days={days}
+        />
       </div>
     </>
   )

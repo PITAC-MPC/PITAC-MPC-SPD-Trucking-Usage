@@ -26,12 +26,28 @@ export function monthDays(monthKey) {
   )
 }
 
+export function shiftMonth(monthKey, delta) {
+  const [year, month] = monthKey.split('-').map(Number)
+  const date = new Date(year, month - 1 + delta, 1)
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`
+}
+
 export function formatMonth(monthKey) {
   const [year, month] = monthKey.split('-').map(Number)
   return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   })
+}
+
+/** "4 March 2026" — how dates are shown in the app. */
+export function formatLongDate(isoDate) {
+  if (!isoDate) return ''
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const name = new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    month: 'long',
+  })
+  return `${day} ${name} ${year}`
 }
 
 export function shortDate(isoDate) {
@@ -61,27 +77,60 @@ export function countDays(start, end) {
 }
 
 /* ------------------------------------------------------------------
-   Usage
-   The period (start + end date) decides the month and is printed on the
-   Date: line. Every truck row keeps its own marked days, so two trucks
-   can have been used on different dates inside the same period.
+   Trucks
+   The truck list is global: a truck exists once and shows up in every
+   month. Each month keeps only its own data for that truck (rate, trips
+   and the days it was used).
    ------------------------------------------------------------------ */
 
-/** The billing period shown on the "Date:" line of the sheet. */
-export function periodBounds(monthKey, sheet) {
-  const list = monthDays(monthKey)
-  const start =
-    sheet?.periodStart && list.includes(sheet.periodStart)
-      ? sheet.periodStart
-      : list[0]
-  const end =
-    sheet?.periodEnd && list.includes(sheet.periodEnd)
-      ? sheet.periodEnd
-      : list[list.length - 1]
-  return { start, end: end < start ? start : end }
+export function emptyMonth() {
+  return {
+    destination: '',
+    controlNumber: '',
+    periodStart: '',
+    periodEnd: '',
+    notes: '',
+    preparedBy: '',
+    preparedPosition: 'Logistics Manager',
+    approvedBy: '',
+    approvedPosition: 'SPD Manager',
+    rows: [],
+  }
 }
 
-/** The days a truck was used. */
+/** The trucks of a month: every global truck plus that month's data. */
+export function truckRows(sheet, trucks) {
+  const byTruck = new Map((sheet.rows ?? []).map((row) => [row.truckId, row]))
+  return trucks.map((truck) => ({
+    truck,
+    row: byTruck.get(truck.id) ?? {
+      truckId: truck.id,
+      rate: truck.rate ?? 0,
+      tripsOverride: null,
+      days: [],
+    },
+  }))
+}
+
+/** Updates the data a month keeps for one truck. */
+export function patchMonthRow(sheet, truckId, patch) {
+  const rows = sheet.rows ?? []
+  const index = rows.findIndex((row) => row.truckId === truckId)
+  const base =
+    index >= 0
+      ? rows[index]
+      : { truckId, rate: 0, tripsOverride: null, days: [] }
+  const next = typeof patch === 'function' ? patch(base) : { ...base, ...patch }
+  return {
+    ...sheet,
+    rows:
+      index >= 0
+        ? rows.map((row, i) => (i === index ? next : row))
+        : [...rows, next],
+  }
+}
+
+/** The days a truck was used in that month. */
 export function rowDays(row) {
   return row?.days ?? []
 }
@@ -108,43 +157,22 @@ export function setRowDays(row, dates, mode) {
   }
 }
 
-/** Expand ranges into the individual days they cover. */
-export function expandRanges(ranges) {
-  const days = []
-  for (const entry of ranges ?? []) {
-    const span = countDays(entry.start, entry.end)
-    for (let i = 0; i < span; i += 1) {
-      days.push(addDays(entry.start, i))
-    }
-  }
-  return days
-}
-
 /* ------------------------------------------------------------------
-   Months
+   The billing period
    ------------------------------------------------------------------ */
 
-export function emptyMonth(trucks) {
-  return {
-    destination: '',
-    controlNumber: '',
-    periodStart: '',
-    periodEnd: '',
-    notes: '',
-    preparedBy: '',
-    preparedPosition: 'Logistics Manager',
-    approvedBy: '',
-    approvedPosition: 'SPD Manager',
-    rows: trucks.map((truck) => ({
-      id: uid(),
-      truckId: truck.id,
-      name: truck.name,
-      plate: truck.plate,
-      rate: truck.rate,
-      tripsOverride: null,
-      days: [],
-    })),
-  }
+/** The billing period shown on the "Date:" line of the sheet. */
+export function periodBounds(monthKey, sheet) {
+  const list = monthDays(monthKey)
+  const start =
+    sheet?.periodStart && list.includes(sheet.periodStart)
+      ? sheet.periodStart
+      : list[0]
+  const end =
+    sheet?.periodEnd && list.includes(sheet.periodEnd)
+      ? sheet.periodEnd
+      : list[list.length - 1]
+  return { start, end: end < start ? start : end }
 }
 
 /** e.g. "MARCH 1-18 2026" or "MARCH 2026" for the whole month. */
@@ -165,39 +193,82 @@ export function formatPeriod(monthKey, sheet) {
   return `${monthName} ${ds} ${ys} - ${monthName} ${de} ${ye}`
 }
 
+/** Months offered by the date picker, around the month being edited. */
+export function monthWindow(centerMonthKey, before = 12, after = 12) {
+  const months = []
+  for (let delta = -before; delta <= after; delta += 1) {
+    const key = shiftMonth(centerMonthKey, delta)
+    months.push({ key, label: formatMonth(key), days: monthDays(key) })
+  }
+  return months
+}
+
+/** Expand ranges into the individual days they cover. */
+export function expandRanges(ranges) {
+  const days = []
+  for (const entry of ranges ?? []) {
+    const span = countDays(entry.start, entry.end)
+    for (let i = 0; i < span; i += 1) {
+      days.push(addDays(entry.start, i))
+    }
+  }
+  return days
+}
+
+/* ------------------------------------------------------------------
+   Saving and loading
+   ------------------------------------------------------------------ */
+
 /**
- * Older files kept the marked days differently over time:
- *  - on each truck row (the oldest),
- *  - shared by the whole month,
- *  - as a period plus the days that were switched off.
- * All of them become per-truck day lists.
+ * Older files kept a copy of the truck list inside every month. They are
+ * folded into one global list; each month keeps only its own data.
  */
-function migrateMonth(month, monthKey) {
-  if (!month || typeof month !== 'object') return month
-
-  const list = monthDays(monthKey)
-
-  let shared = null
-  if (Array.isArray(month.entries)) {
-    shared = expandRanges(month.entries)
-  } else if (Array.isArray(month.exceptions)) {
-    const { start, end } = periodBounds(monthKey, month)
-    shared = list.filter(
-      (day) => day >= start && day <= end && !month.exceptions.includes(day),
-    )
+function migrate(data) {
+  const trucks = new Map()
+  for (const truck of data.trucks ?? []) {
+    trucks.set(truck.id, {
+      id: truck.id,
+      name: truck.name ?? '',
+      plate: truck.plate ?? '',
+      rate: truck.rate ?? 0,
+    })
   }
 
-  const rows = (month.rows ?? []).map((row) => {
-    const { entries, days, ...rest } = row
-    if (Array.isArray(days)) return { ...rest, days }
-    if (Array.isArray(entries)) return { ...rest, days: expandRanges(entries) }
-    return { ...rest, days: shared ? [...shared] : [] }
-  })
+  const months = {}
+  for (const [key, month] of Object.entries(data.months ?? {})) {
+    const rows = (month.rows ?? []).map((row) => {
+      let truckId = row.truckId
+      if (!truckId || !trucks.has(truckId)) {
+        truckId = truckId || uid()
+        if (!trucks.has(truckId)) {
+          trucks.set(truckId, {
+            id: truckId,
+            name: row.name ?? '',
+            plate: row.plate ?? '',
+            rate: row.rate ?? 0,
+          })
+        }
+      }
+      const truck = trucks.get(truckId)
+      return {
+        truckId,
+        rate: row.rate ?? truck.rate ?? 0,
+        tripsOverride: row.tripsOverride ?? null,
+        days: row.days ?? expandRanges(row.entries),
+      }
+    })
+
+    months[key] = {
+      ...emptyMonth(),
+      ...month,
+      rows,
+    }
+  }
 
   return {
-    ...month,
-    rows,
-    notes: month.notes ?? '',
+    trucks: [...trucks.values()],
+    months,
+    lastMonth: data.lastMonth || currentMonth(),
   }
 }
 
@@ -207,15 +278,7 @@ export function loadData() {
     if (raw) {
       const data = JSON.parse(raw)
       if (data && Array.isArray(data.trucks) && data.months) {
-        const months = {}
-        for (const [key, value] of Object.entries(data.months)) {
-          months[key] = migrateMonth(value, key)
-        }
-        return {
-          trucks: data.trucks,
-          months,
-          lastMonth: data.lastMonth || currentMonth(),
-        }
+        return migrate(data)
       }
     }
   } catch (error) {

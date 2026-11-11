@@ -4,19 +4,22 @@ import {
   emptyMonth,
   loadData,
   monthDays,
+  monthWindow,
+  patchMonthRow,
   periodBounds,
   rowTrips,
   saveData,
   setRowDays,
+  truckRows,
   uid,
 } from '../store'
 
 /**
- * All the billing state in one place: the saved data, the month being
- * edited, the billing period and every action the UI can trigger.
+ * All the billing state in one place: the saved data, the truck list, the
+ * month being edited, the billing period and every action the UI can trigger.
  *
  * The month is not chosen separately — it follows the start date of the
- * period, so typing a start date in another month switches sheets.
+ * period, so picking a date in another month switches sheets.
  */
 export default function useBilling() {
   const [data, setData] = useState(loadData)
@@ -25,23 +28,27 @@ export default function useBilling() {
 
   const month = data.lastMonth
   const days = useMemo(() => monthDays(month), [month])
-  const sheet = data.months[month] ?? emptyMonth(data.trucks)
+  const sheet = data.months[month] ?? emptyMonth()
+  const rows = useMemo(
+    () => truckRows(sheet, data.trucks),
+    [sheet, data.trucks],
+  )
 
   const { start: periodStart, end: periodEnd } = periodBounds(month, sheet)
 
   const totals = useMemo(() => {
-    const trips = sheet.rows.reduce((sum, row) => sum + rowTrips(row), 0)
-    const amount = sheet.rows.reduce(
-      (sum, row) => sum + (Number(row.rate) || 0) * rowTrips(row),
+    const trips = rows.reduce((sum, item) => sum + rowTrips(item.row), 0)
+    const amount = rows.reduce(
+      (sum, item) => sum + (Number(item.row.rate) || 0) * rowTrips(item.row),
       0,
     )
     return { trips, amount }
-  }, [sheet.rows])
+  }, [rows])
 
-  const usedDays = useMemo(
-    () =>
-      sheet.rows.reduce((sum, row) => sum + new Set(row.days ?? []).size, 0),
-    [sheet.rows],
+  const startMonths = useMemo(() => monthWindow(month), [month])
+  const endMonths = useMemo(
+    () => [{ key: month, label: '', days }],
+    [month, days],
   )
 
   useEffect(() => {
@@ -54,27 +61,12 @@ export default function useBilling() {
     return () => window.clearTimeout(timer)
   }, [toast])
 
-  // Every month gets its own copy of the truck list the first time it is opened.
-  useEffect(() => {
-    setData((previous) =>
-      previous.months[previous.lastMonth]
-        ? previous
-        : {
-            ...previous,
-            months: {
-              ...previous.months,
-              [previous.lastMonth]: emptyMonth(previous.trucks),
-            },
-          },
-    )
-  }, [data.lastMonth])
-
   const notify = (message, tone = 'success') => setToast({ message, tone })
 
   const updateSheet = (updater) =>
     setData((previous) => {
       const key = previous.lastMonth
-      const existing = previous.months[key] ?? emptyMonth(previous.trucks)
+      const existing = previous.months[key] ?? emptyMonth()
       return {
         ...previous,
         months: { ...previous.months, [key]: updater(existing) },
@@ -84,11 +76,16 @@ export default function useBilling() {
   const patchSheet = (patch) =>
     updateSheet((existing) => ({ ...existing, ...patch }))
 
-  const patchRow = (rowId, patch) =>
-    updateSheet((existing) => ({
-      ...existing,
-      rows: existing.rows.map((row) =>
-        row.id === rowId ? { ...row, ...patch } : row,
+  /** Updates what this month keeps for one truck (rate, trips, days). */
+  const patchRow = (truckId, patch) =>
+    updateSheet((existing) => patchMonthRow(existing, truckId, patch))
+
+  /** The truck list is global: names and plates are the same every month. */
+  const patchTruck = (truckId, patch) =>
+    setData((previous) => ({
+      ...previous,
+      trucks: previous.trucks.map((truck) =>
+        truck.id === truckId ? { ...truck, ...patch } : truck,
       ),
     }))
 
@@ -100,7 +97,7 @@ export default function useBilling() {
     if (monthKey !== data.lastMonth) {
       setData((previous) => {
         const list = monthDays(monthKey)
-        const existing = previous.months[monthKey] ?? emptyMonth(previous.trucks)
+        const existing = previous.months[monthKey] ?? emptyMonth()
         const storedEnd =
           existing.periodEnd && list.includes(existing.periodEnd)
             ? existing.periodEnd
@@ -151,15 +148,12 @@ export default function useBilling() {
   }
 
   /** Marks or unmarks days on one truck row. */
-  const handleToggleDays = (rowId, dates, mode) =>
-    updateSheet((existing) => ({
-      ...existing,
-      rows: existing.rows.map((row) =>
-        row.id === rowId ? setRowDays(row, dates, mode) : row,
-      ),
-    }))
+  const handleToggleDays = (truckId, dates, mode) =>
+    updateSheet((existing) =>
+      patchMonthRow(existing, truckId, (row) => setRowDays(row, dates, mode)),
+    )
 
-  /** Adds a truck to this month (and to the list carried into new months). */
+  /** Adds a truck to the list — it shows up in every month. */
   const addTruck = ({ name: rawName, plate: rawPlate, rate: rawRate }) => {
     const name = String(rawName ?? '').trim()
     if (!name) return
@@ -167,55 +161,37 @@ export default function useBilling() {
     const rate = Math.max(0, Number(rawRate) || 0)
 
     const truck = { id: uid(), name, plate, rate }
-    const row = {
-      id: uid(),
-      truckId: truck.id,
-      name,
-      plate,
-      rate,
-      tripsOverride: null,
-    }
-
-    setData((previous) => {
-      const key = previous.lastMonth
-      const existing = previous.months[key] ?? emptyMonth(previous.trucks)
-      return {
-        ...previous,
-        trucks: [...previous.trucks, truck],
-        months: {
-          ...previous.months,
-          [key]: { ...existing, rows: [...existing.rows, row] },
-        },
-      }
-    })
-    notify(`${name} added to this month.`)
+    setData((previous) => ({
+      ...previous,
+      trucks: [...previous.trucks, truck],
+    }))
+    notify(`${name} added — it is now on every month's sheet.`)
   }
 
-  const handleDeleteRow = (rowId) => {
-    const row = sheet.rows.find((item) => item.id === rowId)
-    const label = row?.name || 'this truck'
+  /** Removes a truck from the list and from every month. */
+  const handleDeleteTruck = (truckId) => {
+    const truck = data.trucks.find((item) => item.id === truckId)
+    const label = truck?.name || 'this truck'
     if (
       !window.confirm(
-        `Remove ${label} from the truck list?\n\nPast months keep their own copy of the row.`,
+        `Remove ${label} from the truck list?\n\nIt disappears from every month.`,
       )
     ) {
       return
     }
-    setData((previous) => {
-      const key = previous.lastMonth
-      const existing = previous.months[key] ?? emptyMonth(previous.trucks)
-      return {
-        ...previous,
-        trucks: previous.trucks.filter((truck) => truck.id !== row?.truckId),
-        months: {
-          ...previous.months,
-          [key]: {
-            ...existing,
-            rows: existing.rows.filter((item) => item.id !== rowId),
+    setData((previous) => ({
+      ...previous,
+      trucks: previous.trucks.filter((item) => item.id !== truckId),
+      months: Object.fromEntries(
+        Object.entries(previous.months).map(([key, month]) => [
+          key,
+          {
+            ...month,
+            rows: (month.rows ?? []).filter((row) => row.truckId !== truckId),
           },
-        },
-      }
-    })
+        ]),
+      ),
+    }))
   }
 
   const handlePrint = async () => {
@@ -258,10 +234,12 @@ export default function useBilling() {
     month,
     days,
     sheet,
+    rows,
     totals,
-    usedDays,
     periodStart,
     periodEnd,
+    startMonths,
+    endMonths,
     isCurrentMonth: month === currentMonth(),
     // preview + toast
     showPreview,
@@ -274,10 +252,11 @@ export default function useBilling() {
     handlePeriodEnd,
     handleToggleDays,
     addTruck,
-    handleDeleteRow,
+    handleDeleteTruck,
     handlePrint,
     handleSavePdf,
     patchSheet,
     patchRow,
+    patchTruck,
   }
 }

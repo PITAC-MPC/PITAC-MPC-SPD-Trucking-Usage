@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { formatMoney, isRowDayUsed, rowTrips } from '../../store'
-import DocField from './DocField'
 
 /**
  * The sheet's table: one row per truck, one column per day of the month.
- * Each truck keeps its own used days, so two trucks can have been out on
- * different dates.
+ * The trucks come from the global list; every truck keeps its own used days
+ * for this month, so two trucks can have been out on different dates.
  */
 export default function SheetTable({
   mode,
-  sheet,
+  rows,
   days,
   columnCount,
   onToggleDays,
   onPatchRow,
-  onDeleteRow,
+  onPatchTruck,
+  onDeleteTruck,
   onAddTruck,
 }) {
   const isScreen = mode === 'screen'
@@ -29,9 +29,10 @@ export default function SheetTable({
     return () => window.removeEventListener('mouseup', stop)
   }, [drag])
 
-  const totalTrips = sheet.rows.reduce((sum, row) => sum + rowTrips(row), 0)
-  const totalAmount = sheet.rows.reduce(
-    (sum, row) => sum + (Number(row.rate) || 0) * rowTrips(row),
+  const totalTrips = rows.reduce((sum, item) => sum + rowTrips(item.row), 0)
+  const totalAmount = rows.reduce(
+    (sum, item) =>
+      sum + (Number(item.row.rate) || 0) * rowTrips(item.row),
     0,
   )
 
@@ -62,39 +63,49 @@ export default function SheetTable({
         {isScreen && <th className="doc-th-action" />}
       </tr>
 
-      {sheet.rows.length === 0 && (
+      {rows.length === 0 && (
         <tr>
           <td colSpan={columnCount} className="doc-empty-cell">
-            No trucks on this sheet yet — use “+ Add truck”.
+            No trucks on this sheet yet — add one in the row below.
           </td>
         </tr>
       )}
 
-      {sheet.rows.map((row, index) => {
+      {rows.map(({ truck, row }, index) => {
         const trips = rowTrips(row)
 
         return (
-          <tr key={row.id}>
+          <tr key={truck.id}>
             <td className="doc-td-trucks">
               <span className="doc-index">{index + 1}</span>
-              <DocField
-                mode={mode}
-                className="doc-name-input"
-                value={row.name}
-                ariaLabel={`Truck ${index + 1} name`}
-                onChange={(value) => onPatchRow(row.id, { name: value })}
-              />
+              {isScreen ? (
+                <input
+                  className="doc-input doc-name-input"
+                  value={truck.name}
+                  aria-label={`Truck ${index + 1} name`}
+                  onChange={(event) =>
+                    onPatchTruck(truck.id, { name: event.target.value })
+                  }
+                />
+              ) : (
+                <span className="doc-name">{truck.name}</span>
+              )}
             </td>
 
             <td className="doc-td-plate">
-              <DocField
-                mode={mode}
-                className="doc-plate-input"
-                value={row.plate}
-                placeholder="—"
-                ariaLabel={`Truck ${index + 1} plate number`}
-                onChange={(value) => onPatchRow(row.id, { plate: value })}
-              />
+              {isScreen ? (
+                <input
+                  className="doc-input doc-plate-input"
+                  value={truck.plate}
+                  placeholder="—"
+                  aria-label={`Truck ${index + 1} plate number`}
+                  onChange={(event) =>
+                    onPatchTruck(truck.id, { plate: event.target.value })
+                  }
+                />
+              ) : (
+                <span className="doc-plate">{truck.plate}</span>
+              )}
             </td>
 
             {days.map((day) => {
@@ -103,17 +114,17 @@ export default function SheetTable({
                 <td
                   key={day}
                   className={used ? 'doc-td-day is-used' : 'doc-td-day'}
-                  title={`${row.name || 'Truck'} — ${day}${used ? ' (used)' : ''}`}
+                  title={`${truck.name || 'Truck'} — ${day}${used ? ' (used)' : ''}`}
                   onMouseDown={(event) => {
                     if (!isScreen) return
                     event.preventDefault()
                     const mode = used ? 'unmark' : 'mark'
-                    setDrag({ rowId: row.id, mode })
-                    onToggleDays(row.id, [day], mode)
+                    setDrag({ truckId: truck.id, mode })
+                    onToggleDays(truck.id, [day], mode)
                   }}
                   onMouseEnter={() => {
-                    if (!drag || drag.rowId !== row.id) return
-                    onToggleDays(row.id, [day], drag.mode)
+                    if (!drag || drag.truckId !== truck.id) return
+                    onToggleDays(truck.id, [day], drag.mode)
                   }}
                 />
               )
@@ -122,28 +133,29 @@ export default function SheetTable({
             <td className="doc-td-trips">
               {isScreen ? (
                 <span className="doc-trips-wrap">
-                  <DocField
-                    mode={mode}
+                  <input
+                    className="doc-input doc-trips-input"
                     type="number"
-                    className="doc-trips-input"
+                    min="0"
+                    step="1"
                     value={trips}
-                    ariaLabel={`Trips for ${row.name}`}
-                    onChange={(value) =>
-                      onPatchRow(row.id, {
+                    aria-label={`Trips for ${truck.name}`}
+                    onChange={(event) => {
+                      const raw = event.target.value
+                      onPatchRow(truck.id, {
                         tripsOverride:
-                          value === '' ? null : Math.max(0, Number(value)),
+                          raw === '' ? null : Math.max(0, Number(raw)),
                       })
-                    }
+                    }}
                   />
                   {row.tripsOverride !== null && (
                     <button
                       type="button"
                       className="doc-auto-link"
                       title="Back to the automatic count"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onPatchRow(row.id, { tripsOverride: null })
-                      }}
+                      onClick={() =>
+                        onPatchRow(truck.id, { tripsOverride: null })
+                      }
                     >
                       auto
                     </button>
@@ -156,15 +168,16 @@ export default function SheetTable({
 
             <td className="doc-td-rate">
               {isScreen ? (
-                <DocField
-                  mode={mode}
+                <input
+                  className="doc-input doc-rate-input"
                   type="number"
-                  className="doc-rate-input"
+                  min="0"
+                  step="1"
                   value={row.rate}
-                  ariaLabel={`Rate for ${row.name}`}
-                  onChange={(value) =>
-                    onPatchRow(row.id, {
-                      rate: Math.max(0, Number(value) || 0),
+                  aria-label={`Rate for ${truck.name}`}
+                  onChange={(event) =>
+                    onPatchRow(truck.id, {
+                      rate: Math.max(0, Number(event.target.value) || 0),
                     })
                   }
                 />
@@ -182,12 +195,9 @@ export default function SheetTable({
                 <button
                   type="button"
                   className="doc-remove"
-                  title={`Remove ${row.name || 'this truck'}`}
-                  aria-label={`Remove ${row.name || 'this truck'}`}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onDeleteRow(row.id)
-                  }}
+                  title={`Remove ${truck.name || 'this truck'}`}
+                  aria-label={`Remove ${truck.name || 'this truck'}`}
+                  onClick={() => onDeleteTruck(truck.id)}
                 >
                   &times;
                 </button>

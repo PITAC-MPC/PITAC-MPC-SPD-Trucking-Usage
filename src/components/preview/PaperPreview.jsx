@@ -4,6 +4,7 @@ import Sheet from '../sheet/Sheet'
 export default function PaperPreview({
   month,
   sheet,
+  rows,
   days,
   scale,
   viewportRef,
@@ -11,7 +12,13 @@ export default function PaperPreview({
   return (
     <div className="paper-preview-scroll" ref={viewportRef}>
       <div className="doc-zoom" style={{ zoom: scale }}>
-        <Sheet mode="print" month={month} sheet={sheet} days={days} />
+        <Sheet
+          mode="print"
+          month={month}
+          sheet={sheet}
+          rows={rows}
+          days={days}
+        />
       </div>
     </div>
   )

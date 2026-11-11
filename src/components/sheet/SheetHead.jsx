@@ -1,4 +1,4 @@
-import DocField from './DocField'
+import DateSelect from '../ui/DateSelect'
 import { formatPeriod, periodBounds } from '../../store'
 
 const ORG_NAME = 'Pitac Multipurpose Cooperative'
@@ -12,13 +12,14 @@ export function SheetControl({ mode, sheet, onPatchSheet }) {
       {mode === 'print' ? (
         <span className="doc-control-value">{sheet.controlNumber}</span>
       ) : (
-        <DocField
-          mode={mode}
-          className="doc-control-input"
+        <input
+          className="doc-input doc-control-input"
           value={sheet.controlNumber}
           placeholder="L 000061"
-          ariaLabel="Control number"
-          onChange={(value) => onPatchSheet({ controlNumber: value })}
+          aria-label="Control number"
+          onChange={(event) =>
+            onPatchSheet({ controlNumber: event.target.value })
+          }
         />
       )}
     </div>
@@ -36,6 +37,8 @@ export function SheetHeadRows({
   sheet,
   days,
   columnCount,
+  startMonths,
+  endMonths,
   onPatchSheet,
   onPeriodStart,
   onPeriodEnd,
@@ -67,26 +70,18 @@ export function SheetHeadRows({
               <span className="doc-date-value">{formatPeriod(month, sheet)}</span>
             ) : (
               <span className="doc-date-inputs">
-                <DocField
-                  mode={mode}
-                  type="date"
-                  className="doc-date-input"
-                  value={start ?? ''}
-                  min={days[0]}
-                  max={days[days.length - 1]}
-                  ariaLabel="Billing period start"
+                <DateSelect
+                  value={start}
+                  months={startMonths}
                   onChange={onPeriodStart}
+                  ariaLabel="Billing period start"
                 />
                 <span className="doc-date-dash">–</span>
-                <DocField
-                  mode={mode}
-                  type="date"
-                  className="doc-date-input"
-                  value={end ?? ''}
-                  min={days[0]}
-                  max={days[days.length - 1]}
-                  ariaLabel="Billing period end"
+                <DateSelect
+                  value={end}
+                  months={endMonths}
                   onChange={onPeriodEnd}
+                  ariaLabel="Billing period end"
                 />
               </span>
             )}
@@ -97,13 +92,14 @@ export function SheetHeadRows({
             {mode === 'print' ? (
               <span className="doc-dest-value">{sheet.destination || ''}</span>
             ) : (
-              <DocField
-                mode={mode}
-                className="doc-dest-input"
+              <input
+                className="doc-input doc-dest-input"
                 value={sheet.destination}
                 placeholder="e.g. Buchanan / MIS OR Relocation"
-                ariaLabel="Destination"
-                onChange={(value) => onPatchSheet({ destination: value })}
+                aria-label="Destination"
+                onChange={(event) =>
+                  onPatchSheet({ destination: event.target.value })
+                }
               />
             )}
           </span>

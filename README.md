@@ -11,7 +11,7 @@ the visual system of the
 
 ## Download
 
-[![Download PITAC Trucking Billing v0.1.0](https://img.shields.io/badge/Download-v0.1.0-8d100e?style=for-the-badge)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+[![Download PITAC Trucking Billing v0.1.1](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.1-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
 
 1. Click the button above and download the **Setup** file.
 2. Open it and follow the installer (Next → Next → Install).
@@ -37,9 +37,14 @@ npm start
 Everything is on one screen.
 
 1. **The sheet** is the working surface:
-   - the **Date:** line holds the billing period — its start and end dates are
-     printed on the paper, and the start date also decides which month the
-     sheet shows (typing a start date in another month opens that month);
+   - the **Date:** line holds the billing period — both dates are picked from
+     lists that read like *4 March 2026*, and the start date also decides
+     which month the sheet shows (picking a date in another month opens that
+     month);
+   - the **truck list is shared**: a truck you add shows up on every month's
+     sheet, and removing it removes it everywhere. Names and plate numbers are
+     the same in every month; the rate, the trips and the used days belong to
+     the month you are filling in;
    - every truck keeps **its own used days**: click a day cell to mark it, or
      click and drag across the days to mark a whole run — only that truck row
      changes, so two trucks can have been out on different dates;
@@ -57,8 +62,8 @@ Everything is on one screen.
    instead. Paper size is fixed to A4 landscape and the output stays on one page.
 
 Everything is saved automatically on this computer. Each month keeps its own
-copy of the truck rows (name, plate, rate, optional manual trips) and its own
-period, destination, notes and signatories.
+period, destination, notes, signatories and its own data for every truck (the
+rate, the trips and the days that truck was used).
 
 ## Notes / current limits
 
@@ -86,6 +91,7 @@ src/components/
   app/AppBar.jsx               brand and print actions
   app/Toast.jsx                status messages
   ui/SectionHeading.jsx        eyebrow + title + action
+  ui/DateSelect.jsx            date picker that reads "4 March 2026"
   preview/PaperPreview.jsx     inline A4 landscape preview
   sheet/Sheet.jsx              the sheet (screen mode + print mode)
   sheet/SheetHead.jsx          control number, header rows, Date/Destination line
@@ -102,17 +108,18 @@ src/components/
 npm run dist       # builds the app and the Windows installer in release/
 ```
 
-The installer is written to `release/PITAC Trucking Billing Setup 0.1.0.exe`.
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.1.exe`.
 
 ## Data model
 
-Each month is stored separately and holds its own copy of the truck rows:
+- `trucks` — **one global list**: `{ id, name, plate, rate }`. Every truck shows
+  up on every month's sheet; adding or removing one applies to all months.
+- `months[<month>]` — what is specific to that month:
+  - `periodStart` / `periodEnd` — the billing period printed on the `Date:` line;
+  - `notes`, `destination`, `controlNumber` and the two signatories;
+  - `rows` — one entry per truck: `{ truckId, rate, tripsOverride, days }`,
+    where `days` are the days that truck was used.
 
-- `name`, `plate`, `rate` and an optional manual `tripsOverride`;
-- `days` — the days that truck was used (each truck has its own);
-- the month also keeps `periodStart` / `periodEnd` (the billing period printed
-  on the `Date:` line), `notes`, `destination`, `controlNumber` and the two
-  signatories.
-
-Older files that stored the used days differently (as ranges on the row, or
-shared by the whole month) are migrated on load into the per-truck day lists.
+Older files that kept a copy of the truck list inside every month are migrated
+on load: the copies are folded into the one global list and each month keeps
+only its own data.

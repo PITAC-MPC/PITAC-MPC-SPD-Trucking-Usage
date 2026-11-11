@@ -59,11 +59,15 @@ export default function Sheet({
   mode = 'screen',
   month,
   sheet,
+  rows,
   days,
+  startMonths,
+  endMonths,
   onToggleDays,
   onPatchRow,
+  onPatchTruck,
   onPatchSheet,
-  onDeleteRow,
+  onDeleteTruck,
   onAddTruck,
   onPeriodStart,
   onPeriodEnd,
@@ -75,9 +79,10 @@ export default function Sheet({
     ? `${SCREEN_COLUMNS.day}px`
     : `${(PRINT_COLUMNS.days / days.length).toFixed(3)}mm`
 
-  const totalTrips = sheet.rows.reduce((sum, row) => sum + rowTrips(row), 0)
-  const totalAmount = sheet.rows.reduce(
-    (sum, row) => sum + (Number(row.rate) || 0) * rowTrips(row),
+  const totalTrips = rows.reduce((sum, item) => sum + rowTrips(item.row), 0)
+  const totalAmount = rows.reduce(
+    (sum, item) =>
+      sum + (Number(item.row.rate) || 0) * rowTrips(item.row),
     0,
   )
 
@@ -128,18 +133,21 @@ export default function Sheet({
             sheet={sheet}
             days={days}
             columnCount={columnCount}
+            startMonths={startMonths}
+            endMonths={endMonths}
             onPatchSheet={onPatchSheet}
             onPeriodStart={onPeriodStart}
             onPeriodEnd={onPeriodEnd}
           />
           <SheetTable
             mode={mode}
-            sheet={sheet}
+            rows={rows}
             days={days}
             columnCount={columnCount}
             onToggleDays={onToggleDays}
             onPatchRow={onPatchRow}
-            onDeleteRow={onDeleteRow}
+            onPatchTruck={onPatchTruck}
+            onDeleteTruck={onDeleteTruck}
             onAddTruck={onAddTruck}
           />
         </tbody>
@@ -148,7 +156,7 @@ export default function Sheet({
       <div className="doc-bottom">
         <SheetSummary
           mode={mode}
-          truckCount={sheet.rows.length}
+          truckCount={rows.length}
           trips={totalTrips}
           amount={totalAmount}
         />
