@@ -829,8 +829,19 @@ select {
   display: none;
 }
 
+/* The printed sheet is as tall as the printable part of the A4 page and
+   keeps room at the bottom for the signature blocks, which are pinned to
+   the bottom of the page. Everything between the table and the signatures
+   is left free. */
 .doc-print {
+  position: relative;
   width: 276mm;
+  /* A4 landscape is 210mm tall; with the 8mm page margins of @page that
+     leaves 194mm of printable height. 2mm are kept free so the browser
+     does not spill an empty second page. */
+  min-height: 192mm;
+  /* Room for the signature blocks that sit at the bottom of the page. */
+  padding-bottom: 24mm;
   color: #111827;
   font-family:
     'Segoe UI',
@@ -977,9 +988,10 @@ select {
   margin-top: 6mm;
 }
 
-/* Blank area for handwritten notes, between the table and the signatures. */
+/* Blank area for handwritten notes, between the table and the signatures.
+   The free space of the page is the gap that is left above the signature
+   blocks. */
 .doc-print .doc-notes {
-  min-height: 22mm;
   margin-top: 8mm;
   color: #111827;
   font-size: 8.5pt;
@@ -993,9 +1005,14 @@ select {
   text-align: right;
 }
 
+/* The signature lines are pinned to the bottom of the page, so the space
+   between the table and them stays free. */
 .doc-print .doc-signatures {
+  position: absolute;
+  bottom: 0;
+  left: 15%;
   width: 74%;
-  margin: 10mm 0 0 15%;
+  margin: 10mm 0 0;
   gap: 10%;
 }
 

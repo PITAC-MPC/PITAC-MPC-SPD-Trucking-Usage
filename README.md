@@ -11,7 +11,7 @@ the visual system of the
 
 ## Download
 
-[![Download PITAC Trucking Billing v0.1.4](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.4-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+[![Download PITAC Trucking Billing v0.1.5](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.5-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
 
 1. Click the button above and download the **Setup** file.
 2. Open it and follow the installer (Next → Next → Install).
@@ -54,7 +54,9 @@ Everything is on one screen.
    - trips count themselves from that truck's marked days — type a number to
      override (for trips done ahead of schedule) and press **auto** to go back;
    - the **notes** area between the table and the signatures is printed as
-     blank space for handwriting (typed notes are printed too).
+     blank space for handwriting (typed notes are printed too); the signature
+     blocks always sit at the bottom of the page, so the space above them
+     stays free;
 2. **Create new** (top bar) clears everything written on the sheet and gives a
    blank one — the trucks you have written down stay in the drop-downs.
 3. **Paper preview** (top bar) expands the printed A4 landscape sheet inline on
@@ -77,6 +79,9 @@ that sheet only — start a new one with **Create new**.
   printer.
 
 ## Project layout
+
+`Structure.md` explains every file in plain language — start there if the
+code is new to you.
 
 ```
 electron/main.cjs              Electron window, print / save-as-PDF handlers
@@ -109,7 +114,7 @@ src/components/
 npm run dist       # builds the app and the Windows installer in release/
 ```
 
-The installer is written to `release/PITAC Trucking Billing Setup 0.1.4.exe`.
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.5.exe`.
 
 ## Data model
 

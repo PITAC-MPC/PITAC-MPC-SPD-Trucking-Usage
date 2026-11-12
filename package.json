@@ -1,6 +1,6 @@
 {
   "name": "pitac-trucking-billing",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Monthly trucking services billing sheet for Pitac Multipurpose Cooperative",
   "author": {
