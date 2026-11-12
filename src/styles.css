@@ -940,21 +940,15 @@ select {
   text-align: center;
 }
 
+/* Used days print as a red highlight instead of a slash. */
 .doc-print .doc-td-day.is-used {
-  background: #e6e6e6;
+  background: #f3c4c1;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
 .doc-print .doc-td-day.is-used::after {
-  content: '/';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: #111827;
-  font-size: 8pt;
-  font-weight: 700;
+  content: none;
 }
 
 .doc-print .doc-td-trips,
