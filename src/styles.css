@@ -953,13 +953,16 @@ select {
 
 /* Used days print as a red highlight instead of a slash. */
 .doc-print .doc-td-day.is-used {
-  background: #f3c4c1;
+  background: var(--payslip-accent-strong);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
 .doc-print .doc-td-day.is-used::after {
-  content: none;
+  content: "/";
+  font-size: 6pt;
+  line-height: 1;
+  color: var(--payslip-accent-soft);
 }
 
 .doc-print .doc-td-trips,

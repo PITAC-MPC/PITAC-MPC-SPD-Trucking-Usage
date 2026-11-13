@@ -11,7 +11,7 @@ the visual system of the
 
 ## Download
 
-[![Download PITAC Trucking Billing v0.1.5](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.5-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
+[![Download PITAC Trucking Billing v0.1.6](https://img.shields.io/badge/%E2%AC%93%20Download-PITAC%20Trucking%20Billing%20v0.1.6-8d100e?style=for-the-badge&logo=github)](https://github.com/PITAC-MPC/PITAC-MPC-SPD-Trucking-Usage/releases/latest)
 
 1. Click the button above and download the **Setup** file.
 2. Open it and follow the installer (Next → Next → Install).
@@ -74,9 +74,8 @@ that sheet only — start a new one with **Create new**.
 - Data lives in the Electron profile (`localStorage`); no export/backup yet.
 - The layout is tuned for the sample's 16 truck rows. More rows may spill to a
   second page.
-- Used days print as a **red highlight** (a slash in the editing view), so the
-  marked days stand out on the paper and still read on a black-and-white
-  printer.
+- Used days print as a **dark maroon cell with a light slash**, so the marked
+  days stand out on the paper and still read on a black-and-white printer.
 
 ## Project layout
 
@@ -114,7 +113,7 @@ src/components/
 npm run dist       # builds the app and the Windows installer in release/
 ```
 
-The installer is written to `release/PITAC Trucking Billing Setup 0.1.5.exe`.
+The installer is written to `release/PITAC Trucking Billing Setup 0.1.6.exe`.
 
 ## Data model
 
